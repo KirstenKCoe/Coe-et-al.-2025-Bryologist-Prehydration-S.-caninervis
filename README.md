@@ -9,6 +9,8 @@ Datasets:
 prehy_wc.csv
 prehy_regen_means.csv
 prehy.csv
+prehy_regen_means_longer.csv
 
-R script:
+R scripts:
 prehy.R
+prehy new fig.R
