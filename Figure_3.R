@@ -44,8 +44,8 @@ wc_rh_summary <- wc_rh_long %>%
 # Facet strip labels
 axis_labeller_rh_wc <- function(labels) {
   labels$measurement <- c(
-    relative_humidity = "Relative Humidity (%)",
-    water_content = "Water Content (%)"
+    relative_humidity = "Relative humidity (%)",
+    water_content = "Water content (%)"
   )[labels$measurement]
   return(labels)
 }
