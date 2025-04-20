@@ -55,22 +55,35 @@ dat_text_rh_wc <- data.frame(
   label = c("Relative humidity", "Water content"),
   measurement = c("relative_humidity", "water_content"),
   x = c(7.5, 7.5),   # adjust depending on your x-axis values
-  y = c(101.5, 360)      # adjust based on expected y-axis ranges
+  y = c(117, 360)      # adjust based on expected y-axis ranges
 )
 
-p <- ggplot(wc_rh_summary, aes(x = prehy_label, y = y_value, color = measurement)) + 
-  geom_line(aes(group = measurement)) +
-  scale_color_manual(values = c(
-    relative_humidity = rh.color,
-    water_content = wc.color
-  )) +
-  scale_fill_manual(values = c(
-    relative_humidity = rh.color,
-    water_content = wc.color
-  )) +
-  geom_errorbar(aes(ymin = y_value - se, ymax = y_value + se), 
-                width = 0.4, colour = 'gray40') +
-  geom_point(aes(fill = measurement), size = 3, shape = 21, colour = "black") +
+p <- ggplot() +
+  # Raw relative humidity points
+  geom_point(data = wc_rh_long %>% filter(measurement == "relative_humidity"),
+             aes(x = prehy_label, y = value),
+             fill = rh.color, size = 3, shape = 21, color = "black") +
+  geom_hline(data = data.frame(measurement = "relative_humidity", yint = 80),
+             aes(yintercept = yint),
+             linetype = "dashed", color = "gray70", linewidth = 0.4) +
+  geom_hline(data = data.frame(measurement = "relative_humidity", yint = 100),
+             aes(yintercept = yint),
+             linetype = "dashed", color = "gray70", linewidth = 0.4) +
+  
+  # Mean ± SE for water content
+  geom_line(data = wc_rh_summary %>% filter(measurement == "water_content"),
+            aes(x = prehy_label, y = y_value, group = measurement),
+            color = wc.color) +
+  
+  geom_errorbar(data = wc_rh_summary %>% filter(measurement == "water_content"),
+                aes(x = prehy_label, ymin = y_value - se, ymax = y_value + se),
+                width = 0.4, color = "gray40") +
+  
+  geom_point(data = wc_rh_summary %>% filter(measurement == "water_content"),
+             aes(x = prehy_label, y = y_value),
+             fill = wc.color, size = 3, shape = 21, color = "black") +
+  
+  # Shared theme, facets, etc.
   scale_y_continuous(labels = scales::label_number(accuracy = 1)) +
   theme_light(base_size = 11) +
   theme(
@@ -96,6 +109,14 @@ p <- ggplot(wc_rh_summary, aes(x = prehy_label, y = y_value, color = measurement
     scales = "free",
     labeller = axis_labeller_rh_wc,
     independent = "x"
+  ) +
+  facetted_pos_scales(
+    y = list(
+      relative_humidity = scale_y_continuous(limits = c(0, 120),
+                                             breaks = seq(0, 100, by = 20),  # 0, 25, 50, 75, 100 only
+                                             labels = scales::label_number(accuracy = 1)),
+      water_content = scale_y_continuous(labels = scales::label_number(accuracy = 1))
+    )
   ) +
   geom_text(data = dat_text_rh_wc, aes(x = x, y = y, label = label), 
             inherit.aes = FALSE, hjust = 0.5, fontface = "bold.italic", size = 4)
