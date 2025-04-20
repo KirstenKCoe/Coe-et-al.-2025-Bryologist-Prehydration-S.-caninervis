@@ -4,12 +4,9 @@ library(tidyverse)
 library(ggh4x)
 
 # load data
-wc <- read.csv("prehy_wc.csv", stringsAsFactors = T)
-# load rh
-# join rh data to wc, in culumn RH_pct
-wc$RH_pct <- rep(NA)
+wc_rh <- read.csv("prehy_wc_rh.csv", stringsAsFactors = T)
 
-wc_rh_long <- wc %>%
+wc_rh_long <- wc_rh %>%
   mutate(
     prehy_label = case_when(
       is.na(Prehy_time_h) ~ "Full\nturgor",
@@ -38,7 +35,7 @@ wc_rh_summary <- wc_rh_long %>%
   group_by(prehy_label, measurement) %>%
   summarise(
     n = sum(!is.na(value)),
-    y_value = mean(value),
+    y_value = if (all(is.na(value))) NA_real_ else mean(value, na.rm = TRUE),
     sd = sd(value, na.rm = TRUE),
     se = sd / sqrt(n),
     .groups = "drop"
@@ -58,7 +55,7 @@ dat_text_rh_wc <- data.frame(
   label = c("Relative humidity", "Water content"),
   measurement = c("relative_humidity", "water_content"),
   x = c(7.5, 7.5),   # adjust depending on your x-axis values
-  y = c(105, 360)      # adjust based on expected y-axis ranges
+  y = c(101.5, 360)      # adjust based on expected y-axis ranges
 )
 
 p <- ggplot(wc_rh_summary, aes(x = prehy_label, y = y_value, color = measurement)) + 
