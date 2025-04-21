@@ -2,44 +2,51 @@
 # load packages
 library(tidyverse)
 library(ggh4x)
+library(scales)
 
 # load data
-wc_rh <- read.csv("prehy_wc_rh.csv", stringsAsFactors = T)
+wc <- read.csv("prehy_wc.csv", stringsAsFactors = T)
+rh <- read.csv("prehy_rh.csv", stringsAsFactors = T)
 
+# change SE to RH_SE
+rh <- rh %>%
+  rename(RH_SE = SE)
+
+# join
+wc_rh <- full_join(wc, rh, join_by("Prehy_time_h" == "Hours"), na_matches = "never", keep = T)
+
+# fill in missing minutes from hours
+wc_rh <- wc_rh %>%
+  mutate(Minutes = case_when(
+    is.na(Minutes) & !is.na(Prehy_time_h) ~ Prehy_time_h * 60,
+    is.na(Minutes) & !is.na(Hours) ~ Hours * 60,
+    prehy_time_cat == "Full_turgor" ~ 11520,
+    TRUE ~ Minutes  # keep existing values or NA
+  ))
+
+# convert to long and rename measurement category
 wc_rh_long <- wc_rh %>%
-  mutate(
-    prehy_label = case_when(
-      is.na(Prehy_time_h) ~ "Full\nturgor",
-      Prehy_time_h >= 24 ~ paste0(Prehy_time_h / 24, " d"),
-      TRUE ~ paste0(Prehy_time_h, " h")
-    )
-  )
-
-wc_rh_long <- wc_rh_long %>%
-  pivot_longer(cols = c(WC_pct, RH_pct),
+  pivot_longer(cols = c(WC_pct, mean.RH, RH_SE),
                names_to = "measurement",
                values_to = "value") %>%
   mutate(
     measurement = recode(measurement,
                          WC_pct = "water_content",
-                         RH_pct = "relative_humidity")
-    )
-  
+                         mean.RH = "relative_humidity"))
+
+
 rh.color <- "#F9C205" # relative humidity
 wc.color <- "#A7C9EC" # water content
 
-# re-order x axis so control is first
-wc_rh_long$prehy_label <- factor(wc_rh_long$prehy_label, levels=unique(wc_rh_long$prehy_label))
-
-wc_rh_summary <- wc_rh_long %>%
-  group_by(prehy_label, measurement) %>%
+wc_rh_summary <- wc_rh_long %>% dplyr::filter(measurement == "water_content") %>%
+  group_by(prehy_time_cat) %>%
   summarise(
     n = sum(!is.na(value)),
     y_value = if (all(is.na(value))) NA_real_ else mean(value, na.rm = TRUE),
     sd = sd(value, na.rm = TRUE),
     se = sd / sqrt(n),
-    .groups = "drop"
-  )
+    .groups = "drop" 
+  ) %>% na.omit()
 
 # Facet strip labels
 axis_labeller_rh_wc <- function(labels) {
@@ -58,7 +65,7 @@ dat_text_rh_wc <- data.frame(
   y = c(117, 380)      # adjust based on expected y-axis ranges
 )
 
-# transform WC between 100 and 300 to create axis gap
+# transform y axis (WC) between 100 and 300 to create axis gap
 squish_trans <- scales::trans_new(
   name = "squished",
   transform = function(y) {
@@ -71,7 +78,35 @@ squish_trans <- scales::trans_new(
   }
 )
 
+# custom x axis ticks
+custom_ticks <- c(
+  "0 h" = 0,
+  "1 h" = 60,
+  "2 h" = 120,
+  "3 h" = 180,
+  "4 h" = 240,
+  "8 h" = 480,
+  "12 h" = 720,
+  "16 h" = 960,
+  "20 h" = 1200,
+  "1 d" = 1440,
+  "2 d" = 2880,
+  "3 d" = 4320,
+  "4 d" = 5760,
+  "7 d" = 10080,
+  "Full\nturgor" = 11520
+)
 
+
+# Get the numeric values
+tick_minutes <- unname(custom_ticks)
+
+# Create a transformation that maps tick_minutes to evenly spaced values
+equal_spacing_trans <- trans_new(
+  name = "equal_spacing",
+  transform = function(x) match(x, tick_minutes),
+  inverse = function(x) tick_minutes[x]
+)
 
 fig3 <- ggplot() +
   # Horizontal lines at 80 and 100 for RH
@@ -84,27 +119,27 @@ fig3 <- ggplot() +
   
   # Raw relative humidity points + mean line, no SE
   geom_line(data = wc_rh_summary %>% filter(measurement == "relative_humidity"),
-            aes(x = prehy_label, y = y_value, group = measurement),
+            aes(x = Minutes, y = y_value, group = measurement),
             color = rh.color) +
   # geom_point(data = wc_rh_long %>% filter(measurement == "relative_humidity"),
-  #            aes(x = prehy_label, y = value),
+  #            aes(x = Minutes, y = value),
   #            fill = rh.color, size = 1, shape = 21, color = "black") + 
   geom_jitter(data = wc_rh_long %>% filter(measurement == "relative_humidity"),
-              aes(x = prehy_label, y = value),
+              aes(x = Minutes, y = value),
               fill = rh.color, size = 1, shape = 21, color = "black",
               width = 0.1, height = 0) +
   
   # Mean ± SE for water content
   geom_line(data = wc_rh_summary %>% filter(measurement == "water_content"),
-            aes(x = prehy_label, y = y_value, group = measurement),
+            aes(x = Minutes, y = y_value, group = measurement),
             color = wc.color) +
   
   geom_errorbar(data = wc_rh_summary %>% filter(measurement == "water_content"),
-                aes(x = prehy_label, ymin = y_value - se, ymax = y_value + se),
+                aes(x = Minutes, ymin = y_value - se, ymax = y_value + se),
                 width = 0.4, color = "gray40") +
   
   geom_point(data = wc_rh_summary %>% filter(measurement == "water_content"),
-             aes(x = prehy_label, y = y_value),
+             aes(x = Minutes, y = y_value),
              fill = wc.color, size = 3, shape = 21, color = "black") +
   
   # Shared theme, facets, etc.
@@ -137,6 +172,13 @@ fig3 <- ggplot() +
     scales = "free",
     labeller = axis_labeller_rh_wc,
     independent = "x"
+  ) +
+  
+  scale_x_continuous(
+    name = "Minutes",
+    breaks = tick_minutes,
+    labels = names(custom_ticks),
+    trans = equal_spacing_trans
   ) +
   facetted_pos_scales(
     y = list(
