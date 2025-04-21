@@ -15,6 +15,8 @@ via_grn <- via_grn %>%
     )
   )
 
+via_grn$treatment_clean <- sub("24 h", "1 d", via_grn$treatment_clean)
+
 # re-order x axis so control is first
 via_grn$treatment_clean <- factor(via_grn$treatment_clean, levels=unique(via_grn$treatment_clean))
 
