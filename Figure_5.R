@@ -29,7 +29,7 @@ dat_text <- data.frame(
   y = c(13.5, 5.5)  # Adjust y for proper positioning based on your data
 )
 
-p <- ggplot(pr_l,aes(x = treatment, y = y_value, color = measurement)) + 
+fig5 <- ggplot(pr_l,aes(x = treatment, y = y_value, color = measurement)) + 
   geom_line(aes(group = measurement)) +
   scale_color_manual(values=c(first_regen_day = d1.color, regen_pts_d21 = d21.color)) +
   scale_fill_manual(values=c(first_regen_day = d1.color, regen_pts_d21 = d21.color)) +
@@ -55,10 +55,9 @@ p <- ggplot(pr_l,aes(x = treatment, y = y_value, color = measurement)) +
   ) +
 
   ylab(NULL) +
-  labs(x = "Length of prehydration treatment (hours or days)") 
+  labs(x = "Length of prehydration treatment (hours or days)") +
 
-# Add geom_text and facets to plot
-p + 
+# Add geom_text and facets to plot 
   facet_grid2(
     rows = vars(measurement),
     switch = "y",
@@ -68,12 +67,12 @@ p +
 geom_text(data = dat_text, aes(x = x, y = y, label = label), 
             inherit.aes = FALSE, hjust = 0.5, fontface = "bold.italic", size = 4)
 
-
+fig5
 
 ## save as hi rez
 ggsave(
-  "Figure_5.jpg",
-  plot = last_plot(),
+  "Figure_5.pdf",
+  plot = fig5,
   device = NULL,
   path = NULL,
   scale = 1,
