@@ -45,7 +45,7 @@ wc_rh_summary <- wc_rh_long %>%
 axis_labeller_rh_wc <- function(labels) {
   labels$measurement <- c(
     relative_humidity = "Relative humidity (%)",
-    water_content = "Water content (%)"
+    water_content = "Water content (% DM)"
   )[labels$measurement]
   return(labels)
 }
@@ -55,11 +55,29 @@ dat_text_rh_wc <- data.frame(
   label = c("Relative humidity", "Water content"),
   measurement = c("relative_humidity", "water_content"),
   x = c(7.5, 7.5),   # adjust depending on your x-axis values
-  y = c(117, 360)      # adjust based on expected y-axis ranges
+  y = c(117, 380)      # adjust based on expected y-axis ranges
 )
 
-p <- ggplot() +
-  # Raw relative humidity points
+# transform WC between 100 and 300 to create axis gap
+squish_trans <- scales::trans_new(
+  name = "squished",
+  transform = function(y) {
+    ifelse(y < 100, y,
+           ifelse(y < 300, 100 + (y - 100) * 0.1, 120 + (y - 300)))
+  },
+  inverse = function(y) {
+    ifelse(y < 100, y,
+           ifelse(y < 120, 100 + (y - 100) / 0.1, 300 + (y - 120)))
+  }
+)
+
+
+
+fig3 <- ggplot() +
+  # Raw relative humidity points + mean line, no SE
+  geom_line(data = wc_rh_summary %>% filter(measurement == "relative_humidity"),
+            aes(x = prehy_label, y = y_value, group = measurement),
+            color = rh.color) +
   geom_point(data = wc_rh_long %>% filter(measurement == "relative_humidity"),
              aes(x = prehy_label, y = value),
              fill = rh.color, size = 3, shape = 21, color = "black") +
@@ -93,13 +111,17 @@ p <- ggplot() +
     axis.ticks.length = unit(0.25, "cm"),
     legend.position = "none",
     strip.text.y.left = element_text(
-      size = 10, color = "black", angle = 90, margin = margin(r = 1)
+      size = 10, color = "black", angle = 90,
+      hjust = 0.5,  # center align vertically
+      margin = margin(r = 3)
     ),
-    panel.spacing = unit(4, "mm"),
+
+    panel.spacing = unit(6, "mm"),
     strip.placement = "outside",
     strip.background = element_blank(),
     axis.title.x = element_text(margin = margin(t = 0)),
-    strip.switch.pad.wrap = unit(-2.5, "lines")
+    strip.switch.pad.wrap = unit(-2.5, "lines"),
+    axis.line.y = element_blank()
   ) +
   ylab(NULL) +
   labs(x = "Length of prehydration treatment (hours or days)") +
@@ -112,20 +134,67 @@ p <- ggplot() +
   ) +
   facetted_pos_scales(
     y = list(
-      relative_humidity = scale_y_continuous(limits = c(0, 120),
-                                             breaks = seq(0, 100, by = 20),  # 0, 25, 50, 75, 100 only
-                                             labels = scales::label_number(accuracy = 1)),
-      water_content = scale_y_continuous(labels = scales::label_number(accuracy = 1))
+      relative_humidity = scale_y_continuous(
+        limits = c(0, 120),
+        breaks = seq(0, 100, by = 20),
+        labels = scales::label_number(accuracy = 1)
+      ),
+      water_content = scale_y_continuous(
+        trans = squish_trans,
+        limits = c(0, 380),
+        breaks = c(seq(0, 100, by = 20), seq(300, 380, by = 20)),
+        labels = scales::label_number(accuracy = 1)
+      )
     )
   ) +
   geom_text(data = dat_text_rh_wc, aes(x = x, y = y, label = label), 
-            inherit.aes = FALSE, hjust = 0.5, fontface = "bold.italic", size = 4)
+            inherit.aes = FALSE, hjust = 0.5, fontface = "bold.italic", size = 4) + 
+  coord_cartesian(clip = "off") +
+  
+  # Mask the y-axis between 100–300 for visual break
+  # Custom y-axis for WC facet, above break
+  geom_segment(
+    data = data.frame(measurement = "water_content"),
+    aes(x = -0.2, xend = -0.2, y = 200, yend = 400),
+    inherit.aes = FALSE,
+    color = "black",
+    linewidth = 0.5) +
+  
+  # Custom y-axis for WC facet, below break
+  geom_segment(
+    data = data.frame(measurement = "water_content"),
+    aes(x = -0.2, xend = -0.2, y = -10, yend = 102),
+    inherit.aes = FALSE,
+    color = "black",
+    linewidth = 0.5) +
 
-p
+  # Triangle break symbol
+  geom_segment(
+    data = data.frame(measurement = "water_content"),
+    aes(x = -0.2, xend = 0.04, y = 202, yend = 151),
+    inherit.aes = FALSE,
+    color = "black",
+    linewidth = 0.5) +
+  
+  geom_segment(
+    data = data.frame(measurement = "water_content"),
+    aes(x = -0.2, xend = 0.04, y = 100, yend = 151),
+    inherit.aes = FALSE,
+    color = "black") +
+  
+  # Custom y-axis for RH facet
+  geom_segment(
+    data = data.frame(measurement = "relative_humidity"),
+    aes(x = -0.2, xend = -0.2, y = -6, yend = 120),
+    inherit.aes = FALSE,
+    color = "black",
+    linewidth = 0.5) 
+
+fig3
 
 ggsave(
-  "Figure_3.jpg",
-  plot = p,
+  "Figure_3.pdf",
+  plot = fig3,
   width = 6,
   height = 4,
   units = "in",
