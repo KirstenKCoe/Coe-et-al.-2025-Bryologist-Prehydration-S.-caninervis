@@ -101,7 +101,7 @@ fig4 <- ggplot(long_via_grn, aes(x = treatment_clean, y = y_value, color = measu
     axis.ticks.length = unit(0.25, "cm"),
     legend.position = "none",
     strip.text.y.left = element_text(
-      size = 11, color = "black", angle = 90,
+      size = 9, color = "black", angle = 90,
       margin = margin(r = 1)
     ),
     panel.spacing = unit(4, "mm"),
