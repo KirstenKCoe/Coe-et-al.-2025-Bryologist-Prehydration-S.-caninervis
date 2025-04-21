@@ -74,19 +74,25 @@ squish_trans <- scales::trans_new(
 
 
 fig3 <- ggplot() +
-  # Raw relative humidity points + mean line, no SE
-  geom_line(data = wc_rh_summary %>% filter(measurement == "relative_humidity"),
-            aes(x = prehy_label, y = y_value, group = measurement),
-            color = rh.color) +
-  geom_point(data = wc_rh_long %>% filter(measurement == "relative_humidity"),
-             aes(x = prehy_label, y = value),
-             fill = rh.color, size = 3, shape = 21, color = "black") +
+  # Horizontal lines at 80 and 100 for RH
   geom_hline(data = data.frame(measurement = "relative_humidity", yint = 80),
              aes(yintercept = yint),
              linetype = "dashed", color = "gray70", linewidth = 0.4) +
   geom_hline(data = data.frame(measurement = "relative_humidity", yint = 100),
              aes(yintercept = yint),
              linetype = "dashed", color = "gray70", linewidth = 0.4) +
+  
+  # Raw relative humidity points + mean line, no SE
+  geom_line(data = wc_rh_summary %>% filter(measurement == "relative_humidity"),
+            aes(x = prehy_label, y = y_value, group = measurement),
+            color = rh.color) +
+  # geom_point(data = wc_rh_long %>% filter(measurement == "relative_humidity"),
+  #            aes(x = prehy_label, y = value),
+  #            fill = rh.color, size = 1, shape = 21, color = "black") + 
+  geom_jitter(data = wc_rh_long %>% filter(measurement == "relative_humidity"),
+              aes(x = prehy_label, y = value),
+              fill = rh.color, size = 1, shape = 21, color = "black",
+              width = 0.1, height = 0) +
   
   # Mean ± SE for water content
   geom_line(data = wc_rh_summary %>% filter(measurement == "water_content"),
@@ -141,8 +147,8 @@ fig3 <- ggplot() +
       ),
       water_content = scale_y_continuous(
         trans = squish_trans,
-        limits = c(0, 380),
-        breaks = c(seq(0, 100, by = 20), seq(300, 380, by = 20)),
+        limits = c(0, 375),
+        breaks = c(seq(0, 100, by = 25), seq(300, 375, by = 25)),
         labels = scales::label_number(accuracy = 1)
       )
     )
