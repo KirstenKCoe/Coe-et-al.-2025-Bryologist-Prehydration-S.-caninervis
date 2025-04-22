@@ -180,7 +180,7 @@ dat_text_rh_wc <- data.frame(
   label = c("Relative humidity", "Water content"),
   measurement = c("relative_humidity", "water_content"),
   x = c(960, 960),   # x location
-  y = c(117, 378)      # y location
+  y = c(117, 380)      # y location
 )
 
 
