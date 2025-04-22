@@ -229,7 +229,7 @@ fig3 <- ggplot(data = summary, aes(x = Minutes)) +
     linewidth = 0.5) +
 
   # Horizontal lines at 80 and 100 for RH
-  geom_hline(data = data.frame(measurement = "relative_humidity", yint = 80),
+  geom_hline(data = data.frame(measurement = "relative_humidity", yint = 85),
              aes(yintercept = yint),
              linetype = "dashed", color = "gray70", linewidth = 0.4) +
   geom_hline(data = data.frame(measurement = "relative_humidity", yint = 100),
