@@ -21,8 +21,8 @@ via_grn$treatment_clean <- sub("24 h", "1 d", via_grn$treatment_clean)
 via_grn$treatment_clean <- factor(via_grn$treatment_clean, levels=unique(via_grn$treatment_clean))
 
 
-via.color <- "#F9C205" # viability
-grn.color <- "#A7C9EC" # green leaves
+grn.color <- "#F9C205" # green leaves
+via.color <- "#A7C9EC" # viability
 
 # Create viability: TRUE if first_regen_d is not NA
 via_grn <- via_grn %>%
@@ -53,8 +53,8 @@ long_via_grn <- bind_rows(viability_summary, green_summary)
 long_via_grn <- long_via_grn %>%
   mutate(
     facet_order = factor(measurement,
-                         levels = c("green_leaves_d7", "viability"),
-                         labels = c("B_green_leaves", "A_viability"))
+                         levels = c("viability", "green_leaves_d7"),
+                         labels = c("B_viability", "A_green_leaves"))
   )
 
 
@@ -63,8 +63,8 @@ long_via_grn <- long_via_grn %>%
 # Axis labeller
 axis_labeller_fig4 <- function(labels) {
   labels$facet_order <- c(
-    A_viability = "Regenerating shoots (%)",
-    B_green_leaves = "Green leaves (%)"
+    A_green_leaves = "Green leaves (%)",
+    B_viability = "Regenerating shoots (%)"
   )[labels$facet_order]
   return(labels)
 }
@@ -72,11 +72,11 @@ axis_labeller_fig4 <- function(labels) {
 
 # Panel text labels (adjust y as needed)
 dat_text_fig4 <- data.frame(
-  label = c("Viability", "Green leaves at day 7"),
-  facet_order = c("A_viability", "B_green_leaves"),
-  measurement = c("viability", "green_leaves_d7"),
+  label = c("Green leaves at day 7", "Viability at day 21"),
+  facet_order = c("A_green_leaves", "B_viability"),
+  measurement = c("green_leaves_d7", "viability"),
   x = c(7.5, 7.5),
-  y = c(105, 55)
+  y = c(55, 106)
 )
 
 
@@ -126,7 +126,25 @@ fig4 <- ggplot(long_via_grn, aes(x = treatment_clean, y = y_value, color = measu
             inherit.aes = FALSE,
             hjust = 0.5,
             fontface = "bold.italic",
-            size = 4)
+            size = 4) + 
+  coord_cartesian(clip = "off") +
+  
+  # Add A and B to panels
+  geom_text(
+    data = data.frame(
+      label = c("A", "B"),
+      measurement = c("green_leaves_d7", "viability"),
+      facet_order = c("A_green_leaves", "B_viability"),
+      x = c(-Inf, -Inf),
+      y = c(Inf, Inf),
+      hjust = c(2, 2),   
+      vjust = c(0.5, 0)    
+    ),
+    aes(x = x, y = y, label = label, hjust = hjust, vjust = vjust),
+    inherit.aes = FALSE,
+    size = 6,
+    fontface = "bold"
+  )
 
 
 fig4
