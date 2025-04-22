@@ -65,7 +65,24 @@ fig5 <- ggplot(pr_l,aes(x = treatment, y = y_value, color = measurement)) +
     labeller = axis_labeller,
     independent = "x"  ) +
 geom_text(data = dat_text, aes(x = x, y = y, label = label), 
-            inherit.aes = FALSE, hjust = 0.5, fontface = "bold.italic", size = 4)
+            inherit.aes = FALSE, hjust = 0.5, fontface = "bold.italic", size = 4) + 
+  coord_cartesian(clip = "off") +
+  
+  # Add A and B to panels
+  geom_text(
+    data = data.frame(
+      label = c("A", "B"),
+      measurement = c("first_regen_day", "regen_pts_d21"),
+      x = c(-Inf, -Inf),
+      y = c(Inf, Inf),
+      hjust = c(2, 2),   
+      vjust = c(0.75, 0.5)    
+    ),
+    aes(x = x, y = y, label = label, hjust = hjust, vjust = vjust),
+    inherit.aes = FALSE,
+    size = 6,
+    fontface = "bold"
+  )
 
 fig5
 
