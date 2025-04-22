@@ -180,7 +180,7 @@ dat_text_rh_wc <- data.frame(
   label = c("Relative humidity", "Water content"),
   measurement = c("relative_humidity", "water_content"),
   x = c(960, 960),   # x location
-  y = c(117, 380)      # y location
+  y = c(117, 382)      # y location
 )
 
 
@@ -342,9 +342,23 @@ fig3 <- ggplot(data = summary, aes(x = Minutes)) +
   coord_cartesian(clip = "off", expand = FALSE) +
   
   # plot invisible vline to expand the plot to the right a bit
-  geom_vline(xintercept = 17080, linewidth = 0)
-
-# perfect
+  geom_vline(xintercept = 17280, alpha = 0) +
+  
+# Add A and B to panels
+  geom_text(
+    data = data.frame(
+      label = c("A", "B"),
+      measurement = c("relative_humidity", "water_content"),
+      x = c(-Inf, -Inf),
+      y = c(Inf, Inf),
+      hjust = c(2, 2),   
+      vjust = c(0.6, -.25)    
+    ),
+    aes(x = x, y = y, label = label, hjust = hjust, vjust = vjust),
+    inherit.aes = FALSE,
+    size = 6,
+    fontface = "bold"
+  )
 
 fig3
 
