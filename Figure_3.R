@@ -102,14 +102,15 @@ custom_ticks <- c(
 )
 
 # transform Minutes into a visually continuous but nonlinear axis, made of segments with different squash factors:
+# as follows:
 # Segment, (minutes),	Visual scale,	Squash factor
-# 0–480,	Linear,	1x
-# 480–1440,	Squashed 4x,	1/4 = 0.25x
+# 0–240,	Linear,	1x
+# 240–1440,	Squashed 4x,	1/4 = 0.25x
 # 1440–5760,	Squashed 24x,	1/24 ≈ 0.0417x
 # 5760–14400,	Squashed 72x,	1/72 ≈ 0.0139x
 
 # define break points and squash factors
-breaks <- c(0, 480, 1440, 5760, 14400)
+breaks <- c(0, 240, 1440, 5760, 14400)
 squash_factors <- c(1, 1/4, 1/24, 1/72)
 
 # create custom transformation
@@ -119,14 +120,14 @@ piecewise_minutes_trans <- trans_new(
   transform = function(x) {
     sapply(x, function(val) {
       if (is.na(val)) return(NA_real_)
-      if (val <= 480) {
+      if (val <= 240) {
         return(val)
       } else if (val <= 1440) {
-        return(480 + (val - 480) * 1/4)
+        return(240 + (val - 240) * 1/4)
       } else if (val <= 5760) {
-        return(480 + (1440 - 480) * 1/4 + (val - 1440) * 1/24)
+        return(240 + (1440 - 240) * 1/4 + (val - 1440) * 1/24)
       } else {
-        return(480 + (1440 - 480) * 1/4 + (5760 - 1440) * 1/24 + (val - 5760) * 1/72)
+        return(240 + (1440 - 240) * 1/4 + (5760 - 1440) * 1/24 + (val - 5760) * 1/72)
       }
     })
   },
@@ -134,18 +135,30 @@ piecewise_minutes_trans <- trans_new(
   inverse = function(x) {
     sapply(x, function(val) {
       if (is.na(val)) return(NA_real_)
-      if (val <= 480) {
+      if (val <= 240) {
         return(val)
-      } else if (val <= 480 + (1440 - 480) * 1/4) {
-        return(480 + (val - 480) * 4)
-      } else if (val <= 480 + (1440 - 480) * 1/4 + (5760 - 1440) * 1/24) {
-        return(1440 + (val - (480 + (1440 - 480) * 1/4)) * 24)
+      } else if (val <= 240 + (1440 - 240) * 1/4) {
+        return(240 + (val - 240) * 4)
+      } else if (val <= 240 + (1440 - 240) * 1/4 + (5760 - 1440) * 1/24) {
+        return(1440 + (val - (240 + (1440 - 240) * 1/4)) * 24)
       } else {
-        return(5760 + (val - (480 + (1440 - 480) * 1/4 + (5760 - 1440) * 1/24)) * 72)
+        return(5760 + (val - (240 + (1440 - 240) * 1/4 + (5760 - 1440) * 1/24)) * 72)
       }
     })
   }
 )
+
+# add error bar widths to summary df
+summary <- summary %>%
+  mutate(
+    error_bar_width = case_when(
+      Minutes <= 240 ~ 40,
+      Minutes <= 1440 ~ (40 * 4),  # e.g. 40 * 4 squash factor
+      Minutes <= 5760 ~ (40 * 24),
+      Minutes <= 14400 ~ (40 * 72),
+      TRUE ~ NA_real_  # fallback
+    )
+  )
 
 rh.color <- "#F9C205" # relative humidity
 wc.color <- "#A7C9EC" # water content
@@ -154,11 +167,51 @@ wc.color <- "#A7C9EC" # water content
 dat_text_rh_wc <- data.frame(
   label = c("Relative humidity", "Water content"),
   measurement = c("relative_humidity", "water_content"),
-  x = c(3600, 7200),   # x location
+  x = c(960, 960),   # x location
   y = c(117, 380)      # y location
 )
 
 fig3 <- ggplot(data = summary, aes(x = Minutes)) +
+  
+  # Custom y-axis for RH facet
+  geom_segment(
+    data = data.frame(measurement = "relative_humidity"),
+    aes(x = -40, xend = -40, y = -6, yend = 120),
+    inherit.aes = FALSE,
+    color = "black",
+    linewidth = 0.5) +
+  
+  # Custom y-axis for WC facet, above break
+  geom_segment(
+    data = data.frame(measurement = "water_content"),
+    aes(x = -40, xend = -40, y = 200, yend = 400),
+    inherit.aes = FALSE,
+    color = "black",
+    linewidth = 0.5) +
+  
+  # Triangular axis break symbol (top)
+  geom_segment(
+    data = data.frame(measurement = "water_content"),
+    aes(x = -40, xend = -30, y = 202, yend = 151),
+    inherit.aes = FALSE,
+    color = "black",
+    linewidth = 0.5) +
+  
+  # Triangular axis break symbol (bottom)
+  geom_segment(
+    data = data.frame(measurement = "water_content"),
+    aes(x = -40, xend = -30, y = 100, yend = 151),
+    inherit.aes = FALSE,
+    color = "black") +
+  
+  # Custom y-axis for WC facet, below break
+  geom_segment(
+    data = data.frame(measurement = "water_content"),
+    aes(x = -40, xend = -40, y = -10, yend = 102),
+    inherit.aes = FALSE,
+    color = "black",
+    linewidth = 0.5) +
+
   # Horizontal lines at 80 and 100 for RH
   geom_hline(data = data.frame(measurement = "relative_humidity", yint = 80),
              aes(yintercept = yint),
@@ -168,8 +221,35 @@ fig3 <- ggplot(data = summary, aes(x = Minutes)) +
              linetype = "dashed", color = "gray70", linewidth = 0.4) +
   # mean 
   geom_line(aes(y = mean, group = measurement, color = measurement)) +
+  
+  # add error bars under points
   geom_errorbar(aes(ymin = mean - se, ymax = mean + se),
-                width = 0.4, color = "gray40") +
+                color = "green") +
+  
+  # Top horizontal line of error bar
+  geom_segment(
+    data = summary,
+    aes(x = Minutes - error_bar_width / 2,
+        xend = Minutes + error_bar_width / 2,
+        y = mean + se,
+        yend = mean + se),
+    inherit.aes = FALSE,
+    linewidth = 0.5,
+    color = "gray40"
+  ) +
+  
+  # Bottom horizontal line of error bar
+  geom_segment(
+    data = summary,
+    aes(x = Minutes - error_bar_width / 2,
+        xend = Minutes + error_bar_width / 2,
+        y = mean - se,
+        yend = mean - se),
+    inherit.aes = FALSE,
+    linewidth = 0.5,
+    color = "gray40"
+  ) +
+
   geom_point(aes(y = mean, fill = measurement),
              size = 3, shape = 21, color = "black") +
   
@@ -236,46 +316,7 @@ fig3 <- ggplot(data = summary, aes(x = Minutes)) +
   ) +
   geom_text(data = dat_text_rh_wc, aes(x = x, y = y, label = label), 
             inherit.aes = FALSE, hjust = 0.5, fontface = "bold.italic", size = 4) + 
-  coord_cartesian(clip = "off") +
-  
-  # Mask the y-axis between 100–300 for visual break
-  # Custom y-axis for WC facet, above break
-  geom_segment(
-    data = data.frame(measurement = "water_content"),
-    aes(x = -0.2, xend = -0.2, y = 200, yend = 400),
-    inherit.aes = FALSE,
-    color = "black",
-    linewidth = 0.5) +
-  
-  # Custom y-axis for WC facet, below break
-  geom_segment(
-    data = data.frame(measurement = "water_content"),
-    aes(x = -0.2, xend = -0.2, y = -10, yend = 102),
-    inherit.aes = FALSE,
-    color = "black",
-    linewidth = 0.5) +
-
-  # Triangle break symbol
-  geom_segment(
-    data = data.frame(measurement = "water_content"),
-    aes(x = -0.2, xend = 0.04, y = 202, yend = 151),
-    inherit.aes = FALSE,
-    color = "black",
-    linewidth = 0.5) +
-  
-  geom_segment(
-    data = data.frame(measurement = "water_content"),
-    aes(x = -0.2, xend = 0.04, y = 100, yend = 151),
-    inherit.aes = FALSE,
-    color = "black") +
-  
-  # Custom y-axis for RH facet
-  geom_segment(
-    data = data.frame(measurement = "relative_humidity"),
-    aes(x = -0.2, xend = -0.2, y = -6, yend = 120),
-    inherit.aes = FALSE,
-    color = "black",
-    linewidth = 0.5) 
+  coord_cartesian(clip = "off") 
 
 fig3
 
