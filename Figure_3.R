@@ -149,16 +149,28 @@ piecewise_minutes_trans <- trans_new(
 )
 
 # add error bar widths to summary df
+# error bar widths are in minutes and then scaled by the inverse of the squash factor to make visually consistent
+base.width <- 27
 summary <- summary %>%
   mutate(
-    error_bar_width = case_when(
-      Minutes <= 240 ~ 40,
-      Minutes <= 1440 ~ (40 * 4),  # e.g. 40 * 4 squash factor
-      Minutes <= 5760 ~ (40 * 24),
-      Minutes <= 14400 ~ (40 * 72),
-      TRUE ~ NA_real_  # fallback
+    left_width = case_when(
+      Minutes <= 240 ~ base.width / 2,                           # left half in 1x zone
+      Minutes <= 1440 ~ (base.width * 4) / 2,
+      Minutes <= 5760 ~ (base.width * 24) / 2,
+      Minutes <= 14400 ~ (base.width * 72) / 2,
+      TRUE ~ NA_real_
+    ),
+    right_width = case_when(
+      Minutes < 240 ~ base.width / 2,
+      Minutes == 240 ~ (base.width * 4) / 2,                     # right half in 4x zone
+      Minutes < 1440 ~ (base.width * 4) / 2,
+      Minutes == 1440 ~ (base.width * 24) / 2,
+      Minutes < 5760 ~ (base.width * 24) / 2,
+      Minutes == 5760 ~ (base.width * 72) / 2,
+      Minutes <= 14400 ~ (base.width * 72) / 2,
+      TRUE ~ NA_real_
     )
-  )
+  ) 
 
 rh.color <- "#F9C205" # relative humidity
 wc.color <- "#A7C9EC" # water content
@@ -168,8 +180,12 @@ dat_text_rh_wc <- data.frame(
   label = c("Relative humidity", "Water content"),
   measurement = c("relative_humidity", "water_content"),
   x = c(960, 960),   # x location
-  y = c(117, 380)      # y location
+  y = c(117, 378)      # y location
 )
+
+
+
+#### PLOT ####
 
 fig3 <- ggplot(data = summary, aes(x = Minutes)) +
   
@@ -184,7 +200,7 @@ fig3 <- ggplot(data = summary, aes(x = Minutes)) +
   # Custom y-axis for WC facet, above break
   geom_segment(
     data = data.frame(measurement = "water_content"),
-    aes(x = -40, xend = -40, y = 200, yend = 400),
+    aes(x = -40, xend = -40, y = 200, yend = 390),
     inherit.aes = FALSE,
     color = "black",
     linewidth = 0.5) +
@@ -207,7 +223,7 @@ fig3 <- ggplot(data = summary, aes(x = Minutes)) +
   # Custom y-axis for WC facet, below break
   geom_segment(
     data = data.frame(measurement = "water_content"),
-    aes(x = -40, xend = -40, y = -10, yend = 102),
+    aes(x = -40, xend = -40, y = 0, yend = 102),
     inherit.aes = FALSE,
     color = "black",
     linewidth = 0.5) +
@@ -220,34 +236,41 @@ fig3 <- ggplot(data = summary, aes(x = Minutes)) +
              aes(yintercept = yint),
              linetype = "dashed", color = "gray70", linewidth = 0.4) +
   # mean 
-  geom_line(aes(y = mean, group = measurement, color = measurement)) +
+  geom_line(
+    data = summary %>% filter(measurement == "water_content", !is.na(mean)),
+    aes(x = Minutes, y = mean, group = 1),
+    color = wc.color,
+    linewidth = 0.5
+  ) +
+  geom_line(
+    data = summary %>% filter(measurement == "relative_humidity", !is.na(mean)),
+    aes(x = Minutes, y = mean, group = 1),
+    color = rh.color,
+    linewidth = 0.5
+  ) +
   
   # add error bars under points
   geom_errorbar(aes(ymin = mean - se, ymax = mean + se),
-                color = "green") +
+                color = "gray40") +
   
   # Top horizontal line of error bar
   geom_segment(
     data = summary,
-    aes(x = Minutes - error_bar_width / 2,
-        xend = Minutes + error_bar_width / 2,
-        y = mean + se,
-        yend = mean + se),
+    aes(x = Minutes - left_width, xend = Minutes + right_width,
+        y = mean + se, yend = mean + se),
     inherit.aes = FALSE,
-    linewidth = 0.5,
-    color = "gray40"
+    color = "gray40",
+    linewidth = 0.5
   ) +
   
   # Bottom horizontal line of error bar
   geom_segment(
     data = summary,
-    aes(x = Minutes - error_bar_width / 2,
-        xend = Minutes + error_bar_width / 2,
-        y = mean - se,
-        yend = mean - se),
+    aes(x = Minutes - left_width, xend = Minutes + right_width,
+        y = mean - se, yend = mean - se),
     inherit.aes = FALSE,
-    linewidth = 0.5,
-    color = "gray40"
+    color = "gray40",
+    linewidth = 0.5
   ) +
 
   geom_point(aes(y = mean, fill = measurement),
@@ -283,7 +306,7 @@ fig3 <- ggplot(data = summary, aes(x = Minutes)) +
       water_content = wc.color)) +
   
   ylab(NULL) +
-  labs(x = "Length of prehydration treatment (hours or days)") +
+  xlab(NULL) +
   facet_grid2(
     rows = vars(measurement),
     switch = "y",
@@ -293,7 +316,7 @@ fig3 <- ggplot(data = summary, aes(x = Minutes)) +
   
   # non-linear custom transform on x 
   scale_x_continuous(
-    name = "Minutes",
+    name = "Length of prehydration treatment (hours or days)",
     trans = piecewise_minutes_trans,
     breaks = unname(custom_ticks),
     labels = names(custom_ticks)) +
@@ -308,15 +331,20 @@ fig3 <- ggplot(data = summary, aes(x = Minutes)) +
       ),
       water_content = scale_y_continuous(
         trans = squish_trans,
-        limits = c(0, 375),
-        breaks = c(seq(0, 100, by = 25), seq(300, 375, by = 25)),
+        limits = c(0, 390),
+        breaks = c(seq(0, 100, by = 25), seq(300, 390, by = 25)),
         labels = scales::label_number(accuracy = 1)
       )
     )
   ) +
   geom_text(data = dat_text_rh_wc, aes(x = x, y = y, label = label), 
             inherit.aes = FALSE, hjust = 0.5, fontface = "bold.italic", size = 4) + 
-  coord_cartesian(clip = "off") 
+  coord_cartesian(clip = "off", expand = FALSE) +
+  
+  # plot invisible vline to expand the plot to the right a bit
+  geom_vline(xintercept = 17080, linewidth = 0)
+
+# perfect
 
 fig3
 
