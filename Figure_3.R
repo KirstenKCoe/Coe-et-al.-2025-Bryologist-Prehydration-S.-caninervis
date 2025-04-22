@@ -150,7 +150,7 @@ piecewise_minutes_trans <- trans_new(
 
 # add error bar widths to summary df
 # error bar widths are in minutes and then scaled by the inverse of the squash factor to make visually consistent
-base.width <- 27
+base.width <- 22
 summary <- summary %>%
   mutate(
     left_width = case_when(
