@@ -93,7 +93,7 @@ fig4 <- ggplot(long_via_grn, aes(x = treatment_clean, y = y_value, color = measu
     green_leaves_d7 = grn.color
   )) +
   geom_errorbar(aes(ymin = y_value - se, ymax = y_value + se),
-                colour = 'gray40', width = 0.4) +
+                colour = 'gray40', width = 0.3) +
   geom_point(aes(fill = measurement), size = 3, shape = 21, colour = "black") +
   theme_light(base_size = 11) +
   theme(

@@ -34,7 +34,7 @@ fig5 <- ggplot(pr_l,aes(x = treatment, y = y_value, color = measurement)) +
   scale_color_manual(values=c(first_regen_day = d1.color, regen_pts_d21 = d21.color)) +
   scale_fill_manual(values=c(first_regen_day = d1.color, regen_pts_d21 = d21.color)) +
   
-  geom_errorbar(aes(ymin = y_value - se, ymax = y_value + se), colour = 'gray40', width = 0.4) +
+  geom_errorbar(aes(ymin = y_value - se, ymax = y_value + se), colour = 'gray40', width = 0.3) +
   geom_point(aes(fill = measurement), size=3, shape = 21, colour = "black") +
   theme_light(base_size = 11) +  # optional: adjust base font size
   theme(
