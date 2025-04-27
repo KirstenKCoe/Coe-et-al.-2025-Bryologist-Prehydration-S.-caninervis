@@ -7,10 +7,14 @@ Included files:
 
 Datasets:
 prehy_wc.csv
+prehy_rh.csv
 prehy_regen_means.csv
 prehy.csv
 prehy_regen_means_longer.csv
 
 R scripts:
 prehy.R
-prehy new fig.R
+Figure_3.R
+Figure_4.R
+Figure_5.R
+
