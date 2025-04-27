@@ -4,7 +4,7 @@ library(tidyverse)
 library(ggh4x)
 
 # load data
-pr_l <- read.csv("prehy_regen_means_longer.csv", stringsAsFactors = T)
+pr_l <- read.csv("data/prehy_regen_means_longer.csv", stringsAsFactors = T)
 
 # re-order x axis so control is first
 pr_l$treatment <- factor(pr_l$treatment, levels=unique(pr_l$treatment))
@@ -30,8 +30,6 @@ dat_text <- data.frame(
 )
 
 fig5 <- ggplot(pr_l,aes(x = treatment, y = y_value, color = measurement)) + 
-  geom_line(aes(group = measurement)) +
-  scale_color_manual(values=c(first_regen_day = d1.color, regen_pts_d21 = d21.color)) +
   scale_fill_manual(values=c(first_regen_day = d1.color, regen_pts_d21 = d21.color)) +
   
   geom_errorbar(aes(ymin = y_value - se, ymax = y_value + se), colour = 'gray40', width = 0.3) +
@@ -88,7 +86,7 @@ fig5
 
 ## save as hi rez
 ggsave(
-  "Figure_5.pdf",
+  "figures/Figure_5.pdf",
   plot = fig5,
   device = NULL,
   path = NULL,

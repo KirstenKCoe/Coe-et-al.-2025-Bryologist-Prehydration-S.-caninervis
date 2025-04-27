@@ -11,7 +11,7 @@ library(easynls)
 
 # analyses for water content as a function of prehydration time n=3
 # load in data
-wc <- read.csv("prehy_wc.csv")
+wc <- read.csv("data/prehy_wc.csv")
 
 # observe data 
 plot(wc$prehy_time_cat, wc$WC_pct, ylim=c(0,110))
@@ -39,8 +39,8 @@ TukeyHSD(aov(WC_pct~prehy_time_cat, data=wc_num_1))
 # analyses for regeneration metrics as a function of prehydration time
 ## day of first regeneration, # regeneration points at day 21, % green leaves at day 7
 # load in data
-p <- read.csv("prehy.csv") 
-pr <- read.csv("prehy_regen_means.csv")
+p <- read.csv("data/prehy.csv") 
+pr <- read.csv("data/prehy_regen_means.csv")
 
 #normality check for green leaves 7d post
 shapiro.test(p$green_lvs_7daypost) #not normal

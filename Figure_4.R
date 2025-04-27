@@ -3,7 +3,7 @@
 library(tidyverse)
 
 # load data
-via_grn <- read.csv("prehy.csv", stringsAsFactors = T)
+via_grn <- read.csv("data/prehy.csv", stringsAsFactors = T)
 
 via_grn <- via_grn %>%
   mutate(
@@ -83,11 +83,6 @@ dat_text_fig4 <- data.frame(
 
 # Plot
 fig4 <- ggplot(long_via_grn, aes(x = treatment_clean, y = y_value, color = measurement)) +
-  geom_line(aes(group = measurement)) +
-  scale_color_manual(values = c(
-    viability = via.color,
-    green_leaves_d7 = grn.color
-  )) +
   scale_fill_manual(values = c(
     viability = via.color,
     green_leaves_d7 = grn.color
@@ -151,7 +146,7 @@ fig4
 
 
 ggsave(
-  "Figure_4.pdf",
+  "figures/Figure_4.pdf",
   plot = fig4,
   width = 6,
   height = 4,

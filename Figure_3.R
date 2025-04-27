@@ -5,8 +5,8 @@ library(ggh4x)
 library(scales)
 
 # load data, water content and relative humidity
-wc <- read.csv("prehy_wc.csv", stringsAsFactors = T)
-rh <- read.csv("prehy_rh.csv", stringsAsFactors = T)
+wc <- read.csv("data/prehy_wc.csv", stringsAsFactors = T)
+rh <- read.csv("data/prehy_rh.csv", stringsAsFactors = T)
 
 # add minutes column to wc
 wc <- wc %>%
@@ -237,7 +237,7 @@ fig3 <- ggplot(data = summary, aes(x = Minutes)) +
              linetype = "dashed", color = "gray70", linewidth = 0.4) +
   # mean 
   geom_line(
-    data = summary %>% filter(measurement == "water_content", !is.na(mean)),
+    data = summary %>% filter(measurement == "water_content", !is.na(mean)) %>% filter(Minutes != 14400.00),
     aes(x = Minutes, y = mean, group = 1),
     color = wc.color,
     linewidth = 0.5
@@ -295,11 +295,6 @@ fig3 <- ggplot(data = summary, aes(x = Minutes)) +
     axis.title.x = element_text(margin = margin(t = 0)),
     strip.switch.pad.wrap = unit(-2.5, "lines"),
     axis.line.y = element_blank()) +
-  
-  scale_color_manual(
-    values = c(
-      relative_humidity = rh.color,
-      water_content = wc.color)) +
   scale_fill_manual(
     values = c(
       relative_humidity = rh.color,
@@ -363,7 +358,7 @@ fig3 <- ggplot(data = summary, aes(x = Minutes)) +
 fig3
 
 ggsave(
-  "Figure_3.pdf",
+  "figures/Figure_3.pdf",
   plot = fig3,
   width = 6,
   height = 4,
